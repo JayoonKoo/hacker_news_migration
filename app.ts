@@ -37,12 +37,48 @@ const store: Store = {
   feeds: [],
 };
 
-function getData<AjaxResponse>(url: string): AjaxResponse {
-  ajax.open("GET", url, false);
-  ajax.send();
+function applyApiMixins(targetClass: any, baseClasses: any[]): void {
+  baseClasses.forEach((baseClass) => {
+    Object.getOwnPropertyNames(baseClass.prototype).forEach((name) => {
+      const descriptor = Object.getOwnPropertyDescriptor(
+        baseClass.prototype,
+        name
+      );
 
-  return JSON.parse(ajax.response);
+      if (descriptor) {
+        Object.defineProperty(targetClass.prototype, name, descriptor);
+      }
+    });
+  });
 }
+
+class Api {
+  protected getRequest<AjaxResponse>(url: string): AjaxResponse {
+    const ajax = new XMLHttpRequest();
+    ajax.open("GET", url, false);
+    ajax.send();
+
+    return JSON.parse(ajax.response);
+  }
+}
+
+class NewsFeedApi {
+  getData(): NewsFeed[] {
+    return this.getRequest<NewsFeed[]>(NEWS_URL);
+  }
+}
+
+class NewsDetailApi {
+  getData(id: string): NewsDetail {
+    return this.getRequest<NewsDetail>(CONTENT_URL.replace("@id", id));
+  }
+}
+
+interface NewsFeedApi extends Api {}
+interface NewsDetailApi extends Api {}
+
+applyApiMixins(NewsFeedApi, [Api]);
+applyApiMixins(NewsDetailApi, [Api]);
 
 function makeFeeds(feeds: NewsFeed[]): NewsFeed[] {
   for (let i = 0; i < feeds.length; i++) {
@@ -61,6 +97,7 @@ function updateView(html: string): void {
 }
 
 function newsFeed(): void {
+  const api = new NewsFeedApi();
   let newsFeed: NewsFeed[] = store.feeds;
   const newsList = [];
 
@@ -90,7 +127,7 @@ function newsFeed(): void {
 	`;
 
   if (newsFeed.length === 0) {
-    newsFeed = store.feeds = makeFeeds(getData<NewsFeed[]>(NEWS_URL));
+    newsFeed = store.feeds = makeFeeds(api.getData());
   }
   const maxLength = Object.keys(newsFeed).length;
   const maxIndex = Math.ceil(maxLength / 10);
@@ -137,7 +174,8 @@ function newsFeed(): void {
 
 function newsDetail(): void {
   const id = location.hash.substr(7);
-  const newsContent = getData<NewsDetail>(CONTENT_URL.replace("@id", id));
+  const api = new NewsDetailApi();
+  const newsContent = api.getData(id);
   let template = `
 	<div class="bg-gray-600 min-h-screen pb-8">
 		<div class="bg-white text-xl">
