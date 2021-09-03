@@ -1,6 +1,6 @@
 import View from "../core/view";
 import { NewsDetailApi } from "../core/api";
-import { NewsDetail, NewsComment } from "../types";
+import { NewsDetail, NewsComment, NewsStore } from "../types";
 
 const template = `
 <div class="bg-gray-600 min-h-screen pb-8">
@@ -32,8 +32,11 @@ const template = `
 `;
 
 export default class NewsDtailView extends View {
-  constructor(containerId: string) {
+  private store: NewsStore;
+
+  constructor(containerId: string, store: NewsStore) {
     super(containerId, template);
+    this.store = store;
   }
 
   render() {
@@ -41,15 +44,9 @@ export default class NewsDtailView extends View {
     const api = new NewsDetailApi();
     const newsDetail: NewsDetail = api.getData(id);
 
-    for (let i = 0; i < window.store.feeds.length; i++) {
-      if (window.store.feeds[i].id === Number(id)) {
-        window.store.feeds[i].read = true;
-        break;
-      }
-    }
-
+    this.store.makeRead(Number(id));
     this.setTmeplateData("comments", this.makeComent(newsDetail.comments));
-    this.setTmeplateData("currentPage", String(window.store.currentPage));
+    this.setTmeplateData("currentPage", String(this.store.currentPage));
     this.setTmeplateData("title", newsDetail.title);
     this.setTmeplateData("content", newsDetail.content);
 

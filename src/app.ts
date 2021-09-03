@@ -1,23 +1,11 @@
-import { Store } from "./types";
 import Router from "./core/router";
 import { NewsDtailView, NewsFeedView } from "./page";
+import Store from "./store";
 
-export const store: Store = {
-  currentPage: 1,
-  feeds: [],
-};
-
-declare global {
-  interface Window {
-    store: Store;
-  }
-}
-
-window.store = store;
-
+const store = new Store();
 const router: Router = new Router();
-const newsFeedView = new NewsFeedView("root");
-const newsDetailView = new NewsDtailView("root");
+const newsFeedView = new NewsFeedView("root", store);
+const newsDetailView = new NewsDtailView("root", store);
 
 router.setDefaultPage(newsFeedView);
 router.addRoutePath("/page/", newsFeedView);
