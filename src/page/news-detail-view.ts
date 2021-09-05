@@ -41,16 +41,17 @@ export default class NewsDtailView extends View {
 
   render() {
     const id = location.hash.substr(7);
-    const api = new NewsDetailApi();
-    const newsDetail: NewsDetail = api.getData(id);
+    const api = new NewsDetailApi(id);
+    api.getDataWithPromise((feed: NewsDetail) => {
+      const { comments, title, content } = feed;
+      this.store.makeRead(Number(id));
+      this.setTmeplateData("comments", this.makeComent(comments));
+      this.setTmeplateData("currentPage", String(this.store.currentPage));
+      this.setTmeplateData("title", title);
+      this.setTmeplateData("content", content);
 
-    this.store.makeRead(Number(id));
-    this.setTmeplateData("comments", this.makeComent(newsDetail.comments));
-    this.setTmeplateData("currentPage", String(this.store.currentPage));
-    this.setTmeplateData("title", newsDetail.title);
-    this.setTmeplateData("content", newsDetail.content);
-
-    this.updateView();
+      this.updateView();
+    });
   }
 
   private makeComent(comments: NewsComment[]): string {
